@@ -1,0 +1,32 @@
+{%- set system_message = 'You are a helpful assistant.' -%}
+{%- set image_token = '<image>' -%}
+{%- for m in messages -%}
+  {%- if m['role'] == 'system' -%}
+    {%- set system_message = m['content'] -%}
+  {%- endif -%}
+{%- endfor -%}
+
+{{ bos_token }}<|im_start|>system
+{{ system_message }}<|im_end|>
+{%- for m in messages -%}
+  {%- if m['role'] == 'user' -%}
+    {%- set parts = [] -%}
+    {%- if m['content'] is sequence and (m['content'] is not string) -%}
+      {%- for c in m['content'] -%}
+        {%- if c.get('type') == 'text' -%}
+          {%- set _ = parts.append(c.get('text', '')) -%}
+        {%- elif c.get('type') == 'image_url' -%}
+          {%- set _ = parts.append(image_token) -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- else -%}
+      {%- set _ = parts.append(m.get('content', '')) -%}
+    {%- endif -%}
+<|im_start|>user
+{{ ' '.join(parts) }}<|im_end|>
+  {%- elif m['role'] == 'assistant' -%}
+<|im_start|>assistant
+{{ m['content'] }}<|im_end|>
+  {%- endif -%}
+{%- endfor -%}
+<|im_start|>assistant
